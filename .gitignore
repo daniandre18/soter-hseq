@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+.DS_Store
+.env*.local
+
+# Configuración local de herramientas, no del proyecto
+.claude/
+
+npm-debug.log*
+yarn-error.log*
