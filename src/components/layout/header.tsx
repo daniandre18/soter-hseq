@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Globe } from "lucide-react";
+import { Bell, Globe, Menu } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { Avatar } from "@/components/ui/avatar";
@@ -9,9 +9,10 @@ import { ROLE_CONFIG } from "@/lib/utils";
 interface HeaderProps {
   title: string;
   locale: string;
+  onMenuClick: () => void;
 }
 
-export function Header({ title, locale }: HeaderProps) {
+export function Header({ title, locale, onMenuClick }: HeaderProps) {
   const { currentUser } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -24,10 +25,19 @@ export function Header({ title, locale }: HeaderProps) {
   };
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between flex-shrink-0">
-      <h1 className="text-base font-semibold text-gray-800">{title}</h1>
+    <header className="h-14 bg-white border-b border-gray-200 px-4 md:px-6 flex items-center justify-between gap-3 flex-shrink-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden -ml-1 p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex-shrink-0"
+          aria-label="Abrir menú"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <h1 className="text-base font-semibold text-gray-800 truncate">{title}</h1>
+      </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-shrink-0">
         {/* Locale switcher */}
         <button
           onClick={switchLocale}

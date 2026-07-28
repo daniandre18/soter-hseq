@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore, useAuthHydrated } from "@/store/auth-store";
 import { useDataStore } from "@/store/data-store";
@@ -21,6 +21,7 @@ export function AppLayout({ children, locale, title, requiredRole }: AppLayoutPr
   const hydrated = useAuthHydrated();
   const { init } = useDataStore();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   // Bootstrap localStorage data once
   useEffect(() => {
@@ -61,9 +62,13 @@ export function AppLayout({ children, locale, title, requiredRole }: AppLayoutPr
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar locale={locale} />
+      <Sidebar
+        locale={locale}
+        mobileOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+      />
       <div className="flex-1 flex flex-col min-w-0">
-        <Header title={title} locale={locale} />
+        <Header title={title} locale={locale} onMenuClick={() => setMobileNavOpen(true)} />
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>

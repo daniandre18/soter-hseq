@@ -2,15 +2,16 @@
 
 import { useMemo, useState } from "react";
 import { useDataStore } from "@/store/data-store";
+import { useAuthStore } from "@/store/auth-store";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input, Select } from "@/components/ui/input";
+import { Input, Select, Textarea } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { QUOTE_STATUS_CONFIG, formatDate, formatCurrency } from "@/lib/utils";
-import type { Quote, QuoteStatus } from "@/types";
-import { FileText, Search, Eye } from "lucide-react";
+import type { Quote, QuoteStatus, QuoteItem } from "@/types";
+import { FileText, Search, Eye, Plus, Trash2 } from "lucide-react";
 
 function QuoteDetail({ quote, onClose }: { quote: Quote; onClose: () => void }) {
   const { clients, updateQuote } = useDataStore();
@@ -102,11 +103,211 @@ function QuoteDetail({ quote, onClose }: { quote: Quote; onClose: () => void }) 
   );
 }
 
+// ─── Create Quote Modal ─────────────────────────────────────────────────────
+type DraftItem = { serviceId: string; quantity: string; unitPrice: string; notes: string };
+
+const emptyItem: DraftItem = { serviceId: "", quantity: "1", unitPrice: "", notes: "" };
+
+function defaultValidUntil() {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  return d.toISOString().slice(0, 10);
+}
+
+function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { clients, services, addQuote } = useDataStore();
+  const { currentUser } = useAuthStore();
+
+  const [clientId, setClientId] = useState("");
+  const [validUntil, setValidUntil] = useState(defaultValidUntil());
+  const [notes, setNotes] = useState("");
+  const [items, setItems] = useState<DraftItem[]>([{ ...emptyItem }]);
+
+  const activeServices = services.filter((s) => s.active);
+
+  const updateItem = (index: number, patch: Partial<DraftItem>) => {
+    setItems((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  };
+
+  const setItemService = (index: number, serviceId: string) => {
+    const service = activeServices.find((s) => s.id === serviceId);
+    updateItem(index, { serviceId, unitPrice: service ? String(service.price) : "" });
+  };
+
+  const addRow = () => setItems((rows) => [...rows, { ...emptyItem }]);
+  const removeRow = (index: number) => setItems((rows) => rows.filter((_, i) => i !== index));
+
+  const rowTotal = (row: DraftItem) => (Number(row.quantity) || 0) * (Number(row.unitPrice) || 0);
+  const subtotal = items.reduce((sum, row) => sum + rowTotal(row), 0);
+
+  const validItems = items.filter((row) => row.serviceId && Number(row.quantity) > 0);
+  const canSave = !!clientId && !!validUntil && validItems.length > 0 && !!currentUser;
+
+  const reset = () => {
+    setClientId("");
+    setValidUntil(defaultValidUntil());
+    setNotes("");
+    setItems([{ ...emptyItem }]);
+  };
+
+  const handleSave = () => {
+    if (!canSave || !currentUser) return;
+    const quoteItems: QuoteItem[] = validItems.map((row) => {
+      const service = activeServices.find((s) => s.id === row.serviceId)!;
+      const quantity = Number(row.quantity);
+      const unitPrice = Number(row.unitPrice) || 0;
+      return {
+        serviceId: service.id,
+        serviceName: service.name,
+        quantity,
+        unitPrice,
+        total: quantity * unitPrice,
+        notes: row.notes || undefined,
+      };
+    });
+    const total = quoteItems.reduce((sum, item) => sum + item.total, 0);
+
+    addQuote({
+      clientId,
+      items: quoteItems,
+      subtotal: total,
+      tax: 0,
+      total,
+      status: "draft",
+      validUntil,
+      notes: notes || undefined,
+      createdBy: currentUser.id,
+    });
+    reset();
+    onClose();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => { reset(); onClose(); }}
+      title="Nueva Cotización"
+      size="xl"
+      footer={
+        <>
+          <Button variant="outline" onClick={() => { reset(); onClose(); }}>Cancelar</Button>
+          <Button onClick={handleSave} disabled={!canSave}>Crear Cotización</Button>
+        </>
+      }
+    >
+      <div className="space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          <Select label="Cliente *" value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <option value="">Seleccionar cliente...</option>
+            {clients.filter((c) => c.status === "active").map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </Select>
+          <Input
+            label="Válida hasta *"
+            type="date"
+            value={validUntil}
+            onChange={(e) => setValidUntil(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-sm font-semibold text-gray-900">Servicios</h4>
+            <Button variant="ghost" size="sm" onClick={addRow}>
+              <Plus className="w-4 h-4" /> Agregar servicio
+            </Button>
+          </div>
+
+          <div className="border border-gray-100 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">Servicio</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 w-20">Cant.</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 w-32">Valor Unit.</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500 w-32">Total</th>
+                  <th className="px-2 py-2 w-10" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {items.map((row, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-2">
+                      <select
+                        value={row.serviceId}
+                        onChange={(e) => setItemService(i, e.target.value)}
+                        className="w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      >
+                        <option value="">Seleccionar servicio...</option>
+                        {activeServices.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={1}
+                        value={row.quantity}
+                        onChange={(e) => updateItem(i, { quantity: e.target.value })}
+                        className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <input
+                        type="number"
+                        min={0}
+                        value={row.unitPrice}
+                        onChange={(e) => updateItem(i, { unitPrice: e.target.value })}
+                        className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium text-gray-900">
+                      {formatCurrency(rowTotal(row))}
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      {items.length > 1 && (
+                        <button
+                          onClick={() => removeRow(i)}
+                          className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                          aria-label="Quitar servicio"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-gray-50">
+                <tr>
+                  <td colSpan={3} className="px-3 py-2.5 text-right font-bold text-gray-900">Total</td>
+                  <td className="px-3 py-2.5 text-right font-bold text-brand-700">{formatCurrency(subtotal)}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <Textarea
+          label="Notas (opcional)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Condiciones, alcance, observaciones..."
+        />
+      </div>
+    </Modal>
+  );
+}
+
 export default function CotizacionesPage({ params }: { params: { locale: string } }) {
   const { quotes, clients } = useDataStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [detail, setDetail] = useState<Quote | null>(null);
+  const [newQuoteOpen, setNewQuoteOpen] = useState(false);
 
   const filtered = useMemo(
     () =>
@@ -142,6 +343,9 @@ export default function CotizacionesPage({ params }: { params: { locale: string 
           ))}
         </Select>
         <span className="text-sm text-gray-400 ml-1">{filtered.length} cotizaciones</span>
+        <Button className="ml-auto" onClick={() => setNewQuoteOpen(true)}>
+          <Plus className="w-4 h-4" /> Nueva Cotización
+        </Button>
       </div>
 
       {filtered.length === 0 ? (
@@ -196,6 +400,7 @@ export default function CotizacionesPage({ params }: { params: { locale: string 
         </Card>
       )}
 
+      <NewQuoteModal open={newQuoteOpen} onClose={() => setNewQuoteOpen(false)} />
       {liveDetail && <QuoteDetail quote={liveDetail} onClose={() => setDetail(null)} />}
     </AppLayout>
   );

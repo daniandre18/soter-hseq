@@ -15,6 +15,7 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
@@ -44,7 +45,13 @@ function buildNav(locale: string): NavItem[] {
   ];
 }
 
-export function Sidebar({ locale }: { locale: string }) {
+interface SidebarProps {
+  locale: string;
+  mobileOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ locale, mobileOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { currentUser, logout } = useAuthStore();
   const { reset } = useDataStore();
@@ -57,12 +64,25 @@ export function Sidebar({ locale }: { locale: string }) {
   );
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col bg-navy-900 text-white transition-all duration-300 ease-in-out flex-shrink-0",
-        collapsed ? "w-16" : "w-60"
+    <>
+      {/* Backdrop, mobile only */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
       )}
-    >
+
+      <aside
+        className={cn(
+          "flex flex-col bg-navy-900 text-white flex-shrink-0",
+          "fixed inset-y-0 left-0 z-40 w-64 transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full",
+          "md:static md:translate-x-0 md:transition-[width] md:duration-300",
+          collapsed ? "md:w-16" : "md:w-60"
+        )}
+      >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-white/10">
         <div className="flex-shrink-0 w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
@@ -76,13 +96,20 @@ export function Sidebar({ locale }: { locale: string }) {
         )}
         <button
           onClick={() => setCollapsed((c) => !c)}
-          className="ml-auto p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          className="hidden md:inline-flex ml-auto p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
           ) : (
             <ChevronLeft className="w-4 h-4" />
           )}
+        </button>
+        <button
+          onClick={onClose}
+          className="md:hidden ml-auto p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          aria-label="Cerrar menú"
+        >
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -96,11 +123,12 @@ export function Sidebar({ locale }: { locale: string }) {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  onClick={onClose}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150",
+                    "flex items-center gap-3 pl-2 pr-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150 border-l-4",
                     active
-                      ? "bg-brand-700 text-white"
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                      ? "bg-white/10 text-white border-accent-500"
+                      : "text-white/70 hover:bg-white/10 hover:text-white border-transparent"
                   )}
                   title={collapsed ? item.label : undefined}
                 >
@@ -152,6 +180,7 @@ export function Sidebar({ locale }: { locale: string }) {
           {!collapsed && "Cerrar sesión"}
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
