@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore, useAuthHydrated } from "@/store/auth-store";
 import { useDataStore } from "@/store/data-store";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { UserRole } from "@/types";
-import { Shield, HardHat, Users, Building2, ChevronRight } from "lucide-react";
+import {
+  Shield,
+  HardHat,
+  Users,
+  Building2,
+  ChevronRight,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+} from "lucide-react";
 
 const DEMO_ROLES: {
   role: UserRole;

@@ -46,8 +46,13 @@ ya visitó el demo se queda con los datos viejos en su localStorage.
 
 ## Gráficas
 
-Barras horizontales en HTML ([`bar-list.tsx`](src/components/ui/bar-list.tsx)),
-no una librería de charts. Reglas que sigue el componente:
+Dibujadas a mano, sin librería de charts: torta en SVG
+([`pie-chart.tsx`](src/components/ui/pie-chart.tsx)) para "órdenes por estado" y
+barras horizontales en HTML ([`bar-list.tsx`](src/components/ui/bar-list.tsx))
+para "servicios más solicitados". La alternativa era recharts, que pesaba más
+que todo el resto del dashboard junto para dos gráficas.
+
+Reglas que siguen ambos componentes:
 
 - **Una serie, un color.** Las barras de "servicios más solicitados" comparten
   color: la longitud ya codifica la magnitud, y teñir por valor gastaría el

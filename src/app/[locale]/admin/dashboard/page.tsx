@@ -19,6 +19,7 @@ import {
   FileText,
 } from "lucide-react";
 import { BarList, type BarListItem } from "@/components/ui/bar-list";
+import { PieChart, type PieSlice } from "@/components/ui/pie-chart";
 
 /**
  * Colores de estado, validados con el script del skill de dataviz sobre la
@@ -70,7 +71,7 @@ export default function DashboardPage({ params }: { params: { locale: string } }
       activeClients: clients.filter((c) => c.status === "active").length };
   }, [workOrders, clients, scheduleEvents]);
 
-  const statusData = useMemo<BarListItem[]>(() => {
+  const statusData = useMemo<PieSlice[]>(() => {
     const counts: Record<string, number> = {};
     workOrders.forEach((o) => { counts[o.status] = (counts[o.status] ?? 0) + 1; });
     return STATUS_ORDER
@@ -134,7 +135,7 @@ export default function DashboardPage({ params }: { params: { locale: string } }
             title="Órdenes por Estado"
             subtitle={`${workOrders.length} órdenes en total`}
           />
-          <BarList items={statusData} unit="órdenes" emptyMessage="Sin órdenes registradas" />
+          <PieChart slices={statusData} unit="órdenes" emptyMessage="Sin órdenes registradas" />
         </Card>
 
         <Card>
