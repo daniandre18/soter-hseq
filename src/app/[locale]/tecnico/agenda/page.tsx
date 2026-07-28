@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
+import { toLocalISODate } from "@/lib/utils";
 
 export default function TecnicoAgendaPage({ params }: { params: { locale: string } }) {
   const { scheduleEvents, clients, workOrders } = useDataStore();
@@ -20,7 +21,7 @@ export default function TecnicoAgendaPage({ params }: { params: { locale: string
     [scheduleEvents, currentUser]
   );
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = toLocalISODate();
   const today = myEvents.filter((e) => e.date === todayStr);
   const upcoming = myEvents.filter((e) => e.date > todayStr);
 

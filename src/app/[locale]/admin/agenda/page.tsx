@@ -7,7 +7,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/input";
-import { formatDate } from "@/lib/utils";
+import { formatDate, toLocalISODate } from "@/lib/utils";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
 import type { Client, ScheduleEvent, User, WorkOrder } from "@/types";
 
@@ -112,7 +112,7 @@ export default function AgendaPage({ params }: { params: { locale: string } }) {
   );
 
   // Upcoming list (next 30 days)
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = toLocalISODate(today);
   const upcoming = filteredEvents
     .filter((e) => e.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -122,7 +122,7 @@ export default function AgendaPage({ params }: { params: { locale: string } }) {
   const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
   function eventsForDay(date: Date): ScheduleEvent[] {
-    const str = date.toISOString().slice(0, 10);
+    const str = toLocalISODate(date);
     return filteredEvents.filter((e) => e.date === str);
   }
 
@@ -180,7 +180,7 @@ export default function AgendaPage({ params }: { params: { locale: string } }) {
                     return <div key={di} className="min-h-[80px] bg-gray-50/50" />;
                   }
                   const dayEvents = eventsForDay(date);
-                  const isToday = date.toISOString().slice(0, 10) === todayStr;
+                  const isToday = toLocalISODate(date) === todayStr;
                   return (
                     <div
                       key={di}

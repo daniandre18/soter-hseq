@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuthStore, useAuthHydrated } from "@/store/auth-store";
 import { useDataStore } from "@/store/data-store";
 import type { UserRole } from "@/types";
 import { Shield, HardHat, Users, Building2, ChevronRight } from "lucide-react";
@@ -57,6 +57,7 @@ const DEMO_ROLES: {
 export default function LoginPage({ params }: { params: { locale: string } }) {
   const { locale } = params;
   const { login, isAuthenticated, currentUser } = useAuthStore();
+  const hydrated = useAuthHydrated();
   const { init } = useDataStore();
   const router = useRouter();
 
@@ -65,6 +66,7 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
 
   // If already logged in, redirect
   useEffect(() => {
+    if (!hydrated) return;
     if (!isAuthenticated || !currentUser) return;
     const homeMap: Record<UserRole, string> = {
       admin:       `/${locale}/admin/dashboard`,
@@ -73,7 +75,7 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
       client:      `/${locale}/cliente/portal`,
     };
     router.replace(homeMap[currentUser.role]);
-  }, [isAuthenticated, currentUser, locale, router]);
+  }, [hydrated, isAuthenticated, currentUser, locale, router]);
 
   const handleLogin = (role: UserRole) => {
     login(role);

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/auth-store";
+import { useAuthStore, useAuthHydrated } from "@/store/auth-store";
 import { useDataStore } from "@/store/data-store";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
@@ -18,6 +18,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, locale, title, requiredRole }: AppLayoutProps) {
   const { currentUser, isAuthenticated } = useAuthStore();
+  const hydrated = useAuthHydrated();
   const { init } = useDataStore();
   const router = useRouter();
 
@@ -26,8 +27,11 @@ export function AppLayout({ children, locale, title, requiredRole }: AppLayoutPr
     init();
   }, [init]);
 
-  // Auth guard
+  // Auth guard. No se evalúa antes de la hidratación: hasta entonces
+  // `isAuthenticated` es false por defecto, no porque no haya sesión.
   useEffect(() => {
+    if (!hydrated) return;
+
     if (!isAuthenticated || !currentUser) {
       router.replace(`/${locale}/login`);
       return;
@@ -45,9 +49,9 @@ export function AppLayout({ children, locale, title, requiredRole }: AppLayoutPr
         router.replace(homeMap[currentUser.role] ?? `/${locale}/login`);
       }
     }
-  }, [isAuthenticated, currentUser, locale, requiredRole, router]);
+  }, [hydrated, isAuthenticated, currentUser, locale, requiredRole, router]);
 
-  if (!isAuthenticated || !currentUser) {
+  if (!hydrated || !isAuthenticated || !currentUser) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-sm text-gray-400">Cargando...</div>

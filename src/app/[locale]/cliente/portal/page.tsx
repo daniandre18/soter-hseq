@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card, CardHeader, StatCard } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress";
 import { OrderStatusBadge, PriorityBadge } from "@/components/modules/orders/order-status-badge";
-import { formatDate } from "@/lib/utils";
+import { formatDate, toLocalISODate } from "@/lib/utils";
 import { Avatar } from "@/components/ui/avatar";
 import {
   ClipboardList, CheckCircle2, Clock, CalendarDays, HardHat, Shield
@@ -30,7 +30,7 @@ export default function ClientPortalPage({ params }: { params: { locale: string 
 
   const activeOrders = myOrders.filter((o) => ["pending","assigned","in_progress"].includes(o.status));
   const closedOrders = myOrders.filter((o) => ["completed","closed"].includes(o.status));
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = toLocalISODate();
   const upcomingVisits = scheduleEvents
     .filter((e) => e.clientId === client?.id && e.date >= todayStr && e.status !== "cancelled")
     .sort((a, b) => a.date.localeCompare(b.date));

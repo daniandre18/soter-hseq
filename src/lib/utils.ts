@@ -117,3 +117,17 @@ export function getInitials(name: string): string {
     .join("")
     .toUpperCase();
 }
+
+/**
+ * Fecha del calendario local en formato YYYY-MM-DD.
+ *
+ * `toISOString().slice(0, 10)` devuelve la fecha en UTC, que no es la misma que
+ * la del usuario: en Colombia (UTC−5) a partir de las 19:00 ya corresponde al
+ * día siguiente, así que "hoy" se calcularía mal toda la noche.
+ */
+export function toLocalISODate(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}

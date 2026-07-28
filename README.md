@@ -21,8 +21,44 @@ npm run dev
 - **Tailwind CSS** — diseño responsivo
 - **Zustand** — estado global persistido
 - **next-intl** — i18n vía `/es` y `/en` (montado, aún sin usar — ver abajo)
-- **Recharts** — gráficas del dashboard
 - **localStorage** — datos de demo (sin backend)
+
+## Datos del demo
+
+La semilla de `seed-data.ts` está escrita sobre una línea de tiempo fija
+(julio de 2024). Publicada tal cual envejecería: "Visitas Hoy" en cero y
+"Próximas Visitas" vacío para siempre.
+
+Dos módulos lo evitan, y se aplican al sembrar en [`storage.ts`](src/lib/storage.ts):
+
+- [`demo-timeline.ts`](src/lib/demo-timeline.ts) desplaza **toda** la línea de
+  tiempo para que el "hoy" de la semilla caiga en el día real. Al mover todas
+  las fechas el mismo número de días, las relaciones entre ellas (creada →
+  programada → completada) se conservan. También renumera el año dentro de los
+  códigos, que por llevar prefijo no son fechas y no se desplazan solos.
+- [`demo-orders.ts`](src/lib/demo-orders.ts) agrega órdenes con una
+  distribución deliberada por servicio. Las 7 escritas a mano usan 7 servicios
+  distintos con una orden cada uno: sin esto, "servicios más solicitados" es un
+  empate a 7 bandas y todas las barras salen al 100%.
+
+Al cambiar la semilla hay que subir `STORAGE_VERSION` en `storage.ts`, o quien
+ya visitó el demo se queda con los datos viejos en su localStorage.
+
+## Gráficas
+
+Barras horizontales en HTML ([`bar-list.tsx`](src/components/ui/bar-list.tsx)),
+no una librería de charts. Reglas que sigue el componente:
+
+- **Una serie, un color.** Las barras de "servicios más solicitados" comparten
+  color: la longitud ya codifica la magnitud, y teñir por valor gastaría el
+  canal de identidad repitiendo lo que la barra dice.
+- **El color sigue al estado, no a la posición.** En "órdenes por estado" cada
+  estado conserva su color aunque cambie el orden o el conteo.
+- **El color nunca informa solo.** Cada fila lleva etiqueta y valor visibles.
+
+Los colores de estado están validados contra la superficie blanca de las
+tarjetas: todos ≥3:1 de contraste, y el peor par adyacente (ámbar/verde) a
+ΔE 7.3 bajo deuteranopía.
 
 ## Arquitectura
 

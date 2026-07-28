@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useEffect, useState } from "react";
 import type { User, UserRole } from "@/types";
 import { SEED_DATA } from "@/lib/seed-data";
 
@@ -41,3 +42,33 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+/**
+ * Indica si el estado persistido ya se leyó desde localStorage.
+ *
+ * `persist` rehidrata de forma asíncrona: en el primer render `isAuthenticated`
+ * siempre es `false`, aunque haya sesión guardada. Quien mire ese valor sin
+ * esperar la hidratación concluirá "no autenticado" y expulsará al login a
+ * cualquiera que recargue una ruta interna.
+ */
+export function useAuthHydrated(): boolean {
+  // Arranca en false también en el cliente: el primer render debe coincidir con
+  // el HTML pre-generado, donde nunca hay sesión.
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    // La API de persist solo existe en el navegador; en el prerender no.
+    const api = useAuthStore.persist;
+    if (!api) {
+      setHydrated(true);
+      return;
+    }
+    if (api.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    return api.onFinishHydration(() => setHydrated(true));
+  }, []);
+
+  return hydrated;
+}

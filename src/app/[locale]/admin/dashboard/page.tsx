@@ -7,7 +7,7 @@ import { Card, CardHeader, StatCard } from "@/components/ui/card";
 import { OrderStatusBadge, PriorityBadge } from "@/components/modules/orders/order-status-badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
-import { formatDate, formatCurrency } from "@/lib/utils";
+import { formatDate, formatCurrency, toLocalISODate } from "@/lib/utils";
 import {
   ClipboardList,
   CheckCircle2,
@@ -18,20 +18,31 @@ import {
   HardHat,
   FileText,
 } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell,
-  PieChart, Pie, Legend,
-} from "recharts";
+import { BarList, type BarListItem } from "@/components/ui/bar-list";
 
+/**
+ * Colores de estado, validados con el script del skill de dataviz sobre la
+ * superficie blanca de las tarjetas: todos >=3:1 de contraste y el peor par
+ * adyacente (ámbar/verde) a ΔE 7.3 bajo deuteranopía. Ese par queda en la banda
+ * de advertencia, lo cual solo es admisible porque cada fila muestra su
+ * etiqueta y su valor: el color nunca informa solo.
+ *
+ * "Pendiente" va en gris a propósito — es el estado aún no iniciado, y el gris
+ * lo deja en segundo plano en vez de competir con los estados que sí exigen
+ * atención.
+ */
 const STATUS_COLORS: Record<string, string> = {
-  pending:     "#9ca3af",
-  assigned:    "#3b82f6",
-  in_progress: "#f59e0b",
-  completed:   "#22c55e",
-  closed:      "#6366f1",
-  overdue:     "#ef4444",
-  cancelled:   "#d1d5db",
+  pending:     "#6b7280", // gray-500
+  assigned:    "#2563eb", // blue-600
+  in_progress: "#b45309", // amber-700
+  completed:   "#16a34a", // green-600
+  closed:      "#4f46e5", // brand-600
+  overdue:     "#dc2626", // red-600
 };
+
+/** Orden del flujo de trabajo, no por cantidad: así el color sigue al estado
+ *  y no cambia de fila cuando cambian los datos. */
+const STATUS_ORDER = ["pending", "assigned", "in_progress", "completed", "closed", "overdue"];
 
 const STATUS_LABELS: Record<string, string> = {
   pending:     "Pendiente",
@@ -50,7 +61,7 @@ export default function DashboardPage({ params }: { params: { locale: string } }
     const closed     = workOrders.filter((o) => ["closed","completed"].includes(o.status)).length;
     const overdue    = workOrders.filter((o) => o.status === "overdue").length;
     const inProgress = workOrders.filter((o) => o.status === "in_progress").length;
-    const today      = new Date().toISOString().slice(0, 10);
+    const today      = toLocalISODate();
     const todayEvents= scheduleEvents.filter((e) => e.date === today).length;
     const techBusy   = new Set(
       workOrders.filter((o) => o.status === "in_progress" && o.technicianId).map((o) => o.technicianId)
@@ -59,15 +70,20 @@ export default function DashboardPage({ params }: { params: { locale: string } }
       activeClients: clients.filter((c) => c.status === "active").length };
   }, [workOrders, clients, scheduleEvents]);
 
-  const statusData = useMemo(() => {
+  const statusData = useMemo<BarListItem[]>(() => {
     const counts: Record<string, number> = {};
     workOrders.forEach((o) => { counts[o.status] = (counts[o.status] ?? 0) + 1; });
-    return Object.entries(counts)
-      .filter(([k]) => k !== "cancelled")
-      .map(([status, value]) => ({ name: STATUS_LABELS[status] ?? status, value, status }));
+    return STATUS_ORDER
+      .filter((status) => (counts[status] ?? 0) > 0)
+      .map((status) => ({
+        key: status,
+        label: STATUS_LABELS[status] ?? status,
+        value: counts[status],
+        color: STATUS_COLORS[status],
+      }));
   }, [workOrders]);
 
-  const serviceData = useMemo(() => {
+  const serviceData = useMemo<BarListItem[]>(() => {
     const counts: Record<string, number> = {};
     workOrders.forEach((o) => {
       const svc = services.find((s) => s.id === o.serviceId);
@@ -76,7 +92,9 @@ export default function DashboardPage({ params }: { params: { locale: string } }
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map(([name, value]) => ({ name: name.length > 28 ? name.slice(0, 28) + "…" : name, value }));
+      // Una sola serie: mismo color en todas las filas. La longitud ya dice
+      // cuál es mayor.
+      .map(([name, value]) => ({ key: name, label: name, value, color: "#4f46e5" }));
   }, [workOrders, services]);
 
   const recentOrders = useMemo(
@@ -85,7 +103,7 @@ export default function DashboardPage({ params }: { params: { locale: string } }
   );
 
   const upcomingEvents = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = toLocalISODate();
     return scheduleEvents
       .filter((e) => e.date >= today && e.status !== "cancelled")
       .sort((a, b) => a.date.localeCompare(b.date))
@@ -110,42 +128,21 @@ export default function DashboardPage({ params }: { params: { locale: string } }
         <StatCard label="Órdenes Pendientes" value={workOrders.filter(o=>o.status==="pending").length} icon={FileText} color="brand" />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
-        {/* Pie chart */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
         <Card>
-          <CardHeader title="Órdenes por Estado" />
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                labelLine={false}
-              >
-                {statusData.map((entry) => (
-                  <Cell key={entry.status} fill={STATUS_COLORS[entry.status] ?? "#9ca3af"} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => [`${v} órdenes`]} />
-            </PieChart>
-          </ResponsiveContainer>
+          <CardHeader
+            title="Órdenes por Estado"
+            subtitle={`${workOrders.length} órdenes en total`}
+          />
+          <BarList items={statusData} unit="órdenes" emptyMessage="Sin órdenes registradas" />
         </Card>
 
-        {/* Bar chart */}
-        <Card className="xl:col-span-2">
-          <CardHeader title="Servicios más Solicitados" />
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={serviceData} layout="vertical" margin={{ left: 8, right: 24 }}>
-              <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-              <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 11 }} />
-              <Tooltip formatter={(v) => [`${v} órdenes`]} />
-              <Bar dataKey="value" fill="#4f46e5" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <Card>
+          <CardHeader
+            title="Servicios más Solicitados"
+            subtitle="Top 5 por número de órdenes"
+          />
+          <BarList items={serviceData} unit="órdenes" emptyMessage="Sin servicios con órdenes" />
         </Card>
       </div>
 
