@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 import type {
   OrderStatus,
   OrderPriority,
@@ -9,7 +10,7 @@ import type {
 } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs);
+  return twMerge(clsx(inputs));
 }
 
 export function formatCurrency(amount: number, currency = "COP"): string {
