@@ -6,6 +6,7 @@ import { useAuthStore, useAuthHydrated } from "@/store/auth-store";
 import { useDataStore } from "@/store/data-store";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { getRoleHome } from "@/lib/routes";
 import type { UserRole } from "@/types";
 
 interface AppLayoutProps {
@@ -40,14 +41,7 @@ export function AppLayout({ children, locale, title, requiredRole }: AppLayoutPr
     if (requiredRole) {
       const allowed = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
       if (!allowed.includes(currentUser.role)) {
-        // Redirect to their home
-        const homeMap: Record<string, string> = {
-          admin:       `/${locale}/admin/dashboard`,
-          coordinator: `/${locale}/admin/dashboard`,
-          technician:  `/${locale}/tecnico/ordenes`,
-          client:      `/${locale}/cliente/portal`,
-        };
-        router.replace(homeMap[currentUser.role] ?? `/${locale}/login`);
+        router.replace(getRoleHome(currentUser.role, locale));
       }
     }
   }, [hydrated, isAuthenticated, currentUser, locale, requiredRole, router]);

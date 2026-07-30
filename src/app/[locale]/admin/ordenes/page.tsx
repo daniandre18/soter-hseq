@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useDataStore } from "@/store/data-store";
 import { useAuthStore } from "@/store/auth-store";
+import { useSearchFilter } from "@/hooks/use-search-filter";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -357,8 +358,7 @@ function NewOrderModal({ open, onClose }: { open: boolean; onClose: () => void }
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function OrdenesPage({ params }: { params: { locale: string } }) {
   const { workOrders, clients, users, services } = useDataStore();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { search, setSearch, statusFilter, setStatusFilter } = useSearchFilter();
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [newOrderOpen, setNewOrderOpen] = useState(false);
   const [detailOrder, setDetailOrder] = useState<WorkOrder | null>(null);

@@ -41,203 +41,174 @@ interface DataState extends AppData {
   updateScheduleEvent: (id: string, patch: Partial<ScheduleEvent>) => void;
 }
 
-export const useDataStore = create<DataState>()((set, get) => ({
-  users: [],
-  clients: [],
-  services: [],
-  workOrders: [],
-  quotes: [],
-  scheduleEvents: [],
+export const useDataStore = create<DataState>()((set, get) => {
+  /** Aplica un cambio parcial al estado y lo persiste en localStorage a la vez. */
+  const persist = (patch: Partial<AppData>) => {
+    saveData({ ...get(), ...patch });
+    set(patch);
+  };
 
-  init: () => {
-    const data = loadData();
-    set(data);
-  },
+  return {
+    users: [],
+    clients: [],
+    services: [],
+    workOrders: [],
+    quotes: [],
+    scheduleEvents: [],
 
-  reset: () => {
-    const data = resetData();
-    set(data);
-  },
+    init: () => {
+      set(loadData());
+    },
 
-  // ─── Work Orders ─────────────────────────────────────────────────────────────
-  addWorkOrder: (order) => {
-    const state = get();
-    const newOrder: WorkOrder = {
-      ...order,
-      id: generateId("ot"),
-      code: generateCode("OT", state.workOrders.length),
-      evidence: [],
-      activity: [
-        {
-          id: generateId("act"),
-          action: "Orden creada",
-          userId: order.createdBy,
-          userName: state.users.find((u) => u.id === order.createdBy)?.name ?? "Sistema",
-          timestamp: new Date().toISOString(),
-        },
-      ],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    reset: () => {
+      set(resetData());
+    },
 
-    const workOrders = [...state.workOrders, newOrder];
-    const next = { ...state, workOrders };
-    saveData(next);
-    set({ workOrders });
-    return newOrder;
-  },
+    // ─── Work Orders ─────────────────────────────────────────────────────────────
+    addWorkOrder: (order) => {
+      const state = get();
+      const newOrder: WorkOrder = {
+        ...order,
+        id: generateId("ot"),
+        code: generateCode("OT", state.workOrders.length),
+        evidence: [],
+        activity: [
+          {
+            id: generateId("act"),
+            action: "Orden creada",
+            userId: order.createdBy,
+            userName: state.users.find((u) => u.id === order.createdBy)?.name ?? "Sistema",
+            timestamp: new Date().toISOString(),
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-  updateWorkOrder: (id, patch) => {
-    const state = get();
-    const workOrders = state.workOrders.map((o) =>
-      o.id === id ? { ...o, ...patch, updatedAt: new Date().toISOString() } : o
-    );
-    saveData({ ...state, workOrders });
-    set({ workOrders });
-  },
+      persist({ workOrders: [...state.workOrders, newOrder] });
+      return newOrder;
+    },
 
-  updateOrderStatus: (id, status, note, userId, userName) => {
-    const state = get();
-    const workOrders = state.workOrders.map((o) => {
-      if (o.id !== id) return o;
-      const activity = [
-        ...o.activity,
-        {
-          id: generateId("act"),
-          action: `Estado cambiado a: ${status}`,
-          userId,
-          userName,
-          timestamp: new Date().toISOString(),
-          notes: note || undefined,
-        },
-      ];
-      return { ...o, status, activity, updatedAt: new Date().toISOString() };
-    });
-    saveData({ ...state, workOrders });
-    set({ workOrders });
-  },
+    updateWorkOrder: (id, patch) => {
+      const workOrders = get().workOrders.map((o) =>
+        o.id === id ? { ...o, ...patch, updatedAt: new Date().toISOString() } : o
+      );
+      persist({ workOrders });
+    },
 
-  updateOrderProgress: (id, progress, note, userId, userName) => {
-    const state = get();
-    const workOrders = state.workOrders.map((o) => {
-      if (o.id !== id) return o;
-      const activity = [
-        ...o.activity,
-        {
-          id: generateId("act"),
-          action: `Avance actualizado al ${progress}%`,
-          userId,
-          userName,
-          timestamp: new Date().toISOString(),
-          notes: note || undefined,
-        },
-      ];
-      return { ...o, progress, activity, updatedAt: new Date().toISOString() };
-    });
-    saveData({ ...state, workOrders });
-    set({ workOrders });
-  },
+    updateOrderStatus: (id, status, note, userId, userName) => {
+      const workOrders = get().workOrders.map((o) => {
+        if (o.id !== id) return o;
+        const activity = [
+          ...o.activity,
+          {
+            id: generateId("act"),
+            action: `Estado cambiado a: ${status}`,
+            userId,
+            userName,
+            timestamp: new Date().toISOString(),
+            notes: note || undefined,
+          },
+        ];
+        return { ...o, status, activity, updatedAt: new Date().toISOString() };
+      });
+      persist({ workOrders });
+    },
 
-  deleteWorkOrder: (id) => {
-    const state = get();
-    const workOrders = state.workOrders.filter((o) => o.id !== id);
-    saveData({ ...state, workOrders });
-    set({ workOrders });
-  },
+    updateOrderProgress: (id, progress, note, userId, userName) => {
+      const workOrders = get().workOrders.map((o) => {
+        if (o.id !== id) return o;
+        const activity = [
+          ...o.activity,
+          {
+            id: generateId("act"),
+            action: `Avance actualizado al ${progress}%`,
+            userId,
+            userName,
+            timestamp: new Date().toISOString(),
+            notes: note || undefined,
+          },
+        ];
+        return { ...o, progress, activity, updatedAt: new Date().toISOString() };
+      });
+      persist({ workOrders });
+    },
 
-  // ─── Clients ─────────────────────────────────────────────────────────────────
-  addClient: (client) => {
-    const state = get();
-    const newClient: Client = {
-      ...client,
-      id: generateId("c"),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const clients = [...state.clients, newClient];
-    saveData({ ...state, clients });
-    set({ clients });
-    return newClient;
-  },
+    deleteWorkOrder: (id) => {
+      persist({ workOrders: get().workOrders.filter((o) => o.id !== id) });
+    },
 
-  updateClient: (id, patch) => {
-    const state = get();
-    const clients = state.clients.map((c) =>
-      c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c
-    );
-    saveData({ ...state, clients });
-    set({ clients });
-  },
+    // ─── Clients ─────────────────────────────────────────────────────────────────
+    addClient: (client) => {
+      const newClient: Client = {
+        ...client,
+        id: generateId("c"),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      persist({ clients: [...get().clients, newClient] });
+      return newClient;
+    },
 
-  deleteClient: (id) => {
-    const state = get();
-    const clients = state.clients.filter((c) => c.id !== id);
-    saveData({ ...state, clients });
-    set({ clients });
-  },
+    updateClient: (id, patch) => {
+      const clients = get().clients.map((c) =>
+        c.id === id ? { ...c, ...patch, updatedAt: new Date().toISOString() } : c
+      );
+      persist({ clients });
+    },
 
-  // ─── Users ───────────────────────────────────────────────────────────────────
-  addUser: (user) => {
-    const state = get();
-    const newUser: User = {
-      ...user,
-      id: generateId("u"),
-      createdAt: new Date().toISOString(),
-    };
-    const users = [...state.users, newUser];
-    saveData({ ...state, users });
-    set({ users });
-    return newUser;
-  },
+    deleteClient: (id) => {
+      persist({ clients: get().clients.filter((c) => c.id !== id) });
+    },
 
-  updateUser: (id, patch) => {
-    const state = get();
-    const users = state.users.map((u) => (u.id === id ? { ...u, ...patch } : u));
-    saveData({ ...state, users });
-    set({ users });
-  },
+    // ─── Users ───────────────────────────────────────────────────────────────────
+    addUser: (user) => {
+      const newUser: User = {
+        ...user,
+        id: generateId("u"),
+        createdAt: new Date().toISOString(),
+      };
+      persist({ users: [...get().users, newUser] });
+      return newUser;
+    },
 
-  // ─── Quotes ──────────────────────────────────────────────────────────────────
-  addQuote: (quote) => {
-    const state = get();
-    const newQuote: Quote = {
-      ...quote,
-      id: generateId("q"),
-      code: generateCode("COT", state.quotes.length),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    const quotes = [...state.quotes, newQuote];
-    saveData({ ...state, quotes });
-    set({ quotes });
-    return newQuote;
-  },
+    updateUser: (id, patch) => {
+      const users = get().users.map((u) => (u.id === id ? { ...u, ...patch } : u));
+      persist({ users });
+    },
 
-  updateQuote: (id, patch) => {
-    const state = get();
-    const quotes = state.quotes.map((q) =>
-      q.id === id ? { ...q, ...patch, updatedAt: new Date().toISOString() } : q
-    );
-    saveData({ ...state, quotes });
-    set({ quotes });
-  },
+    // ─── Quotes ──────────────────────────────────────────────────────────────────
+    addQuote: (quote) => {
+      const newQuote: Quote = {
+        ...quote,
+        id: generateId("q"),
+        code: generateCode("COT", get().quotes.length),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      persist({ quotes: [...get().quotes, newQuote] });
+      return newQuote;
+    },
 
-  // ─── Schedule ────────────────────────────────────────────────────────────────
-  addScheduleEvent: (event) => {
-    const state = get();
-    const newEvent: ScheduleEvent = { ...event, id: generateId("ev") };
-    const scheduleEvents = [...state.scheduleEvents, newEvent];
-    saveData({ ...state, scheduleEvents });
-    set({ scheduleEvents });
-    return newEvent;
-  },
+    updateQuote: (id, patch) => {
+      const quotes = get().quotes.map((q) =>
+        q.id === id ? { ...q, ...patch, updatedAt: new Date().toISOString() } : q
+      );
+      persist({ quotes });
+    },
 
-  updateScheduleEvent: (id, patch) => {
-    const state = get();
-    const scheduleEvents = state.scheduleEvents.map((e) =>
-      e.id === id ? { ...e, ...patch } : e
-    );
-    saveData({ ...state, scheduleEvents });
-    set({ scheduleEvents });
-  },
-}));
+    // ─── Schedule ────────────────────────────────────────────────────────────────
+    addScheduleEvent: (event) => {
+      const newEvent: ScheduleEvent = { ...event, id: generateId("ev") };
+      persist({ scheduleEvents: [...get().scheduleEvents, newEvent] });
+      return newEvent;
+    },
+
+    updateScheduleEvent: (id, patch) => {
+      const scheduleEvents = get().scheduleEvents.map((e) =>
+        e.id === id ? { ...e, ...patch } : e
+      );
+      persist({ scheduleEvents });
+    },
+  };
+});

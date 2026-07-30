@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useDataStore } from "@/store/data-store";
+import { useSearchFilter } from "@/hooks/use-search-filter";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -131,8 +132,7 @@ function TechnicianDetail({ tech, onClose }: { tech: User; onClose: () => void }
 
 export default function TecnicosPage({ params }: { params: { locale: string } }) {
   const { users, workOrders, addUser, updateUser } = useDataStore();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { search, setSearch, statusFilter, setStatusFilter } = useSearchFilter();
   const [modalOpen, setModalOpen] = useState(false);
   const [editTech, setEditTech] = useState<User | null>(null);
   const [detailTech, setDetailTech] = useState<User | null>(null);

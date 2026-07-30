@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useDataStore } from "@/store/data-store";
+import { useSearchFilter } from "@/hooks/use-search-filter";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -151,8 +152,7 @@ function ClientDetail({ client, onClose, locale }: { client: Client; onClose: ()
 
 export default function ClientesPage({ params }: { params: { locale: string } }) {
   const { clients, addClient, updateClient } = useDataStore();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { search, setSearch, statusFilter, setStatusFilter } = useSearchFilter();
   const [modalOpen, setModalOpen] = useState(false);
   const [editClient, setEditClient] = useState<Client | null>(null);
   const [detailClient, setDetailClient] = useState<Client | null>(null);
