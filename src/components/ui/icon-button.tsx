@@ -7,14 +7,29 @@ const iconButtonVariants = cva(
   {
     variants: {
       tone: {
-        // Ícono "principal": texto y hover más marcados (ej. abrir menú).
+        /**
+         * Superficie clara (blanco/gris-100). Ícono "principal": texto y
+         * hover más marcados. Ej.: abrir menú en el Header.
+         */
         default: "text-gray-500 hover:text-gray-800 hover:bg-gray-100",
-        // Ícono secundario/decorativo: arranca más apagado (ej. notificaciones, cerrar).
+        /**
+         * Superficie clara (blanco/gris-100). Ícono secundario/decorativo:
+         * arranca más apagado que `default`. Ej.: notificaciones y cerrar
+         * modal en el Header/Modal.
+         */
         muted: "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
-        // Sobre superficie oscura (ej. sidebar navy).
+        /**
+         * Superficie oscura (navy del Sidebar). Es el único tono pensado
+         * para fondo no-blanco — usarlo fuera del Sidebar probablemente
+         * quede ilegible.
+         */
         inverse: "text-white/60 hover:text-white hover:bg-white/10",
-        // Solo cambia el fondo en hover; el texto no se oscurece (ej. flechas
-        // de navegación de mes, donde el color es puramente estructural).
+        /**
+         * Superficie clara, pero a diferencia de `default`/`muted` el texto
+         * NO cambia de color en hover — solo aparece el fondo. Pensado para
+         * glifos/flechas donde el color es puramente estructural, no un
+         * indicador de estado (ej. navegación de mes en Agenda).
+         */
         quiet: "text-gray-500 hover:bg-gray-100",
       },
       size: {
