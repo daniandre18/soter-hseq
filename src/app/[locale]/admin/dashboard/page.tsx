@@ -7,7 +7,7 @@ import { Card, CardHeader, StatCard } from "@/components/ui/card";
 import { OrderStatusBadge, PriorityBadge } from "@/components/modules/orders/order-status-badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { Avatar } from "@/components/ui/avatar";
-import { formatDate, formatCurrency, toLocalISODate } from "@/lib/utils";
+import { formatDate, formatCurrency, toLocalISODate, ORDER_STATUS_CONFIG } from "@/lib/utils";
 import {
   ClipboardList,
   CheckCircle2,
@@ -21,38 +21,15 @@ import {
 import { BarList, type BarListItem } from "@/components/ui/bar-list";
 import { PieChart, type PieSlice } from "@/components/ui/pie-chart";
 
-/**
- * Colores de estado, validados con el script del skill de dataviz sobre la
- * superficie blanca de las tarjetas: todos >=3:1 de contraste y el peor par
- * adyacente (ámbar/verde) a ΔE 7.3 bajo deuteranopía. Ese par queda en la banda
- * de advertencia, lo cual solo es admisible porque cada fila muestra su
- * etiqueta y su valor: el color nunca informa solo.
+/** Orden del flujo de trabajo, no por cantidad: así el color sigue al estado
+ *  y no cambia de fila cuando cambian los datos.
  *
  * "Pendiente" va en gris a propósito — es el estado aún no iniciado, y el gris
  * lo deja en segundo plano en vez de competir con los estados que sí exigen
- * atención.
- */
-const STATUS_COLORS: Record<string, string> = {
-  pending:     "#6b7280", // gray-500
-  assigned:    "#2563eb", // blue-600
-  in_progress: "#b45309", // amber-700
-  completed:   "#16a34a", // green-600
-  closed:      "#4f46e5", // brand-600
-  overdue:     "#dc2626", // red-600
-};
-
-/** Orden del flujo de trabajo, no por cantidad: así el color sigue al estado
- *  y no cambia de fila cuando cambian los datos. */
+ * atención. Los colores en sí (y su validación de contraste/deuteranopía)
+ * viven en `ORDER_STATUS_CONFIG` — única fuente de verdad compartida con las
+ * insignias de estado del resto de la app. */
 const STATUS_ORDER = ["pending", "assigned", "in_progress", "completed", "closed", "overdue"];
-
-const STATUS_LABELS: Record<string, string> = {
-  pending:     "Pendiente",
-  assigned:    "Asignada",
-  in_progress: "En Proceso",
-  completed:   "Completada",
-  closed:      "Cerrada",
-  overdue:     "Vencida",
-};
 
 export default function DashboardPage({ params }: { params: { locale: string } }) {
   const { workOrders, clients, users, scheduleEvents, services } = useDataStore();
@@ -78,9 +55,9 @@ export default function DashboardPage({ params }: { params: { locale: string } }
       .filter((status) => (counts[status] ?? 0) > 0)
       .map((status) => ({
         key: status,
-        label: STATUS_LABELS[status] ?? status,
+        label: ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG].label,
         value: counts[status],
-        color: STATUS_COLORS[status],
+        color: ORDER_STATUS_CONFIG[status as keyof typeof ORDER_STATUS_CONFIG].hex,
       }));
   }, [workOrders]);
 

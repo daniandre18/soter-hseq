@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useDataStore } from "@/store/data-store";
 import { useAuthStore } from "@/store/auth-store";
+import { useSearchFilter } from "@/hooks/use-search-filter";
 import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,20 +11,24 @@ import { Button } from "@/components/ui/button";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { QUOTE_STATUS_CONFIG, formatDate, formatCurrency } from "@/lib/utils";
-import type { Quote, QuoteStatus, QuoteItem } from "@/types";
+import {
+  EMPTY_DRAFT_ITEM,
+  buildQuoteItems,
+  computeItemsTotal,
+  computeRowTotal,
+  defaultValidUntil,
+  getValidDraftItems,
+  nextQuoteStatuses,
+  type DraftQuoteItem,
+} from "@/lib/quotes";
+import type { Quote } from "@/types";
 import { FileText, Search, Eye, Plus, Trash2 } from "lucide-react";
 
 function QuoteDetail({ quote, onClose }: { quote: Quote; onClose: () => void }) {
   const { clients, updateQuote } = useDataStore();
   const client = clients.find((c) => c.id === quote.clientId);
   const cfg = QUOTE_STATUS_CONFIG[quote.status];
-
-  const allowedTransitions: Partial<Record<QuoteStatus, QuoteStatus[]>> = {
-    draft:    ["sent"],
-    sent:     ["approved", "rejected"],
-    approved: ["converted"],
-  };
-  const nextStatuses = allowedTransitions[quote.status] ?? [];
+  const nextStatuses = nextQuoteStatuses(quote.status);
 
   return (
     <Modal open onClose={onClose} title={`${quote.code}`} size="lg">
@@ -104,16 +109,6 @@ function QuoteDetail({ quote, onClose }: { quote: Quote; onClose: () => void }) 
 }
 
 // ─── Create Quote Modal ─────────────────────────────────────────────────────
-type DraftItem = { serviceId: string; quantity: string; unitPrice: string; notes: string };
-
-const emptyItem: DraftItem = { serviceId: "", quantity: "1", unitPrice: "", notes: "" };
-
-function defaultValidUntil() {
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return d.toISOString().slice(0, 10);
-}
-
 function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { clients, services, addQuote } = useDataStore();
   const { currentUser } = useAuthStore();
@@ -121,11 +116,11 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
   const [clientId, setClientId] = useState("");
   const [validUntil, setValidUntil] = useState(defaultValidUntil());
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<DraftItem[]>([{ ...emptyItem }]);
+  const [items, setItems] = useState<DraftQuoteItem[]>([{ ...EMPTY_DRAFT_ITEM }]);
 
   const activeServices = services.filter((s) => s.active);
 
-  const updateItem = (index: number, patch: Partial<DraftItem>) => {
+  const updateItem = (index: number, patch: Partial<DraftQuoteItem>) => {
     setItems((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
@@ -134,37 +129,22 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
     updateItem(index, { serviceId, unitPrice: service ? String(service.price) : "" });
   };
 
-  const addRow = () => setItems((rows) => [...rows, { ...emptyItem }]);
+  const addRow = () => setItems((rows) => [...rows, { ...EMPTY_DRAFT_ITEM }]);
   const removeRow = (index: number) => setItems((rows) => rows.filter((_, i) => i !== index));
 
-  const rowTotal = (row: DraftItem) => (Number(row.quantity) || 0) * (Number(row.unitPrice) || 0);
-  const subtotal = items.reduce((sum, row) => sum + rowTotal(row), 0);
-
-  const validItems = items.filter((row) => row.serviceId && Number(row.quantity) > 0);
-  const canSave = !!clientId && !!validUntil && validItems.length > 0 && !!currentUser;
+  const subtotal = computeItemsTotal(items);
+  const canSave = !!clientId && !!validUntil && getValidDraftItems(items).length > 0 && !!currentUser;
 
   const reset = () => {
     setClientId("");
     setValidUntil(defaultValidUntil());
     setNotes("");
-    setItems([{ ...emptyItem }]);
+    setItems([{ ...EMPTY_DRAFT_ITEM }]);
   };
 
   const handleSave = () => {
     if (!canSave || !currentUser) return;
-    const quoteItems: QuoteItem[] = validItems.map((row) => {
-      const service = activeServices.find((s) => s.id === row.serviceId)!;
-      const quantity = Number(row.quantity);
-      const unitPrice = Number(row.unitPrice) || 0;
-      return {
-        serviceId: service.id,
-        serviceName: service.name,
-        quantity,
-        unitPrice,
-        total: quantity * unitPrice,
-        notes: row.notes || undefined,
-      };
-    });
+    const quoteItems = buildQuoteItems(items, activeServices);
     const total = quoteItems.reduce((sum, item) => sum + item.total, 0);
 
     addQuote({
@@ -264,7 +244,7 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
                       />
                     </td>
                     <td className="px-3 py-2 text-right font-medium text-gray-900">
-                      {formatCurrency(rowTotal(row))}
+                      {formatCurrency(computeRowTotal(row))}
                     </td>
                     <td className="px-2 py-2 text-center">
                       {items.length > 1 && (
@@ -304,8 +284,7 @@ function NewQuoteModal({ open, onClose }: { open: boolean; onClose: () => void }
 
 export default function CotizacionesPage({ params }: { params: { locale: string } }) {
   const { quotes, clients } = useDataStore();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const { search, setSearch, statusFilter, setStatusFilter } = useSearchFilter();
   const [detail, setDetail] = useState<Quote | null>(null);
   const [newQuoteOpen, setNewQuoteOpen] = useState(false);
 

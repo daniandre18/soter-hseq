@@ -7,40 +7,26 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Select } from "@/components/ui/input";
-import { formatDate, toLocalISODate } from "@/lib/utils";
+import { toLocalISODate, SCHEDULE_EVENT_STATUS_CONFIG } from "@/lib/utils";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
 import type { Client, ScheduleEvent, User, WorkOrder } from "@/types";
 
-const EVENT_STATUS_COLOR: Record<ScheduleEvent["status"], string> = {
-  scheduled:  "bg-blue-100 text-blue-700",
-  confirmed:  "bg-green-100 text-green-700",
-  completed:  "bg-gray-100 text-gray-500",
-  cancelled:  "bg-red-50 text-red-400",
-};
-
-const EVENT_STATUS_LABEL: Record<ScheduleEvent["status"], string> = {
-  scheduled:  "Programada",
-  confirmed:  "Confirmada",
-  completed:  "Completada",
-  cancelled:  "Cancelada",
-};
-
 // Generate a simple 4-week calendar view
-function getWeeks(year: number, month: number) {
+function getWeeks(year: number, month: number): (Date | null)[][] {
   const firstDay = new Date(year, month, 1);
   const lastDay  = new Date(year, month + 1, 0);
-  const weeks: Date[][] = [];
-  let week: Date[] = [];
+  const weeks: (Date | null)[][] = [];
+  let week: (Date | null)[] = [];
 
   // Pad start
-  for (let i = 0; i < firstDay.getDay(); i++) week.push(null as unknown as Date);
+  for (let i = 0; i < firstDay.getDay(); i++) week.push(null);
 
   for (let d = 1; d <= lastDay.getDate(); d++) {
     week.push(new Date(year, month, d));
     if (week.length === 7) { weeks.push(week); week = []; }
   }
   if (week.length > 0) {
-    while (week.length < 7) week.push(null as unknown as Date);
+    while (week.length < 7) week.push(null);
     weeks.push(week);
   }
   return weeks;
@@ -60,8 +46,8 @@ function EventCard({ event, users, clients, workOrders }: {
     <div className="p-4 rounded-xl border border-gray-100 bg-white hover:shadow-sm transition-shadow">
       <div className="flex items-start justify-between gap-2 mb-3">
         <p className="font-medium text-gray-900 text-sm leading-tight">{event.title}</p>
-        <Badge className={EVENT_STATUS_COLOR[event.status]}>
-          {EVENT_STATUS_LABEL[event.status]}
+        <Badge className={`${SCHEDULE_EVENT_STATUS_CONFIG[event.status].color} ${SCHEDULE_EVENT_STATUS_CONFIG[event.status].bg}`}>
+          {SCHEDULE_EVENT_STATUS_CONFIG[event.status].label}
         </Badge>
       </div>
 

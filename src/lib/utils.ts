@@ -1,5 +1,12 @@
 import { clsx, type ClassValue } from "clsx";
-import type { OrderStatus, OrderPriority, QuoteStatus, UserRole, ServiceCategory } from "@/types";
+import type {
+  OrderStatus,
+  OrderPriority,
+  QuoteStatus,
+  ScheduleEvent,
+  UserRole,
+  ServiceCategory,
+} from "@/types";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
@@ -53,15 +60,22 @@ export function generateCode(prefix: string, total: number): string {
 
 export const ORDER_STATUS_CONFIG: Record<
   OrderStatus,
-  { label: string; labelEn: string; color: string; bg: string; dot: string }
+  { label: string; labelEn: string; color: string; bg: string; dot: string; hex: string }
 > = {
-  pending:     { label: "Pendiente",    labelEn: "Pending",     color: "text-gray-700",  bg: "bg-gray-100",   dot: "bg-gray-400" },
-  assigned:    { label: "Asignada",     labelEn: "Assigned",    color: "text-blue-700",  bg: "bg-blue-100",   dot: "bg-blue-500" },
-  in_progress: { label: "En Proceso",   labelEn: "In Progress", color: "text-amber-700", bg: "bg-amber-100",  dot: "bg-amber-500" },
-  completed:   { label: "Completada",   labelEn: "Completed",   color: "text-green-700", bg: "bg-green-100",  dot: "bg-green-500" },
-  closed:      { label: "Cerrada",      labelEn: "Closed",      color: "text-indigo-700",bg: "bg-indigo-100", dot: "bg-indigo-500" },
-  overdue:     { label: "Vencida",      labelEn: "Overdue",     color: "text-red-700",   bg: "bg-red-100",    dot: "bg-red-500" },
-  cancelled:   { label: "Cancelada",    labelEn: "Cancelled",   color: "text-gray-500",  bg: "bg-gray-50",    dot: "bg-gray-300" },
+  // `hex` es el mismo color que `dot`, pero como valor CSS real: lo necesitan
+  // los contextos que no pueden usar clases de Tailwind (fill de SVG, `style`
+  // inline), como el pie chart del dashboard. Validado con el script del
+  // skill de dataviz sobre superficie blanca: todos >=3:1 de contraste y el
+  // peor par adyacente (ámbar/verde) a ΔE 7.3 bajo deuteranopía — admisible
+  // porque cada fila del pie chart muestra su etiqueta y su valor, nunca solo
+  // el color.
+  pending:     { label: "Pendiente",    labelEn: "Pending",     color: "text-gray-700",  bg: "bg-gray-100",   dot: "bg-gray-400",   hex: "#6b7280" },
+  assigned:    { label: "Asignada",     labelEn: "Assigned",    color: "text-blue-700",  bg: "bg-blue-100",   dot: "bg-blue-500",   hex: "#2563eb" },
+  in_progress: { label: "En Proceso",   labelEn: "In Progress", color: "text-amber-700", bg: "bg-amber-100",  dot: "bg-amber-500",  hex: "#b45309" },
+  completed:   { label: "Completada",   labelEn: "Completed",   color: "text-green-700", bg: "bg-green-100",  dot: "bg-green-500",  hex: "#16a34a" },
+  closed:      { label: "Cerrada",      labelEn: "Closed",      color: "text-indigo-700",bg: "bg-indigo-100", dot: "bg-indigo-500", hex: "#4f46e5" },
+  overdue:     { label: "Vencida",      labelEn: "Overdue",     color: "text-red-700",   bg: "bg-red-100",    dot: "bg-red-500",    hex: "#dc2626" },
+  cancelled:   { label: "Cancelada",    labelEn: "Cancelled",   color: "text-gray-500",  bg: "bg-gray-50",    dot: "bg-gray-300",   hex: "#d1d5db" },
 };
 
 export const PRIORITY_CONFIG: Record<
@@ -83,6 +97,16 @@ export const QUOTE_STATUS_CONFIG: Record<
   approved:  { label: "Aprobada",  labelEn: "Approved",  color: "text-green-600", bg: "bg-green-100" },
   rejected:  { label: "Rechazada", labelEn: "Rejected",  color: "text-red-600",   bg: "bg-red-100" },
   converted: { label: "Convertida",labelEn: "Converted", color: "text-purple-600",bg: "bg-purple-100" },
+};
+
+export const SCHEDULE_EVENT_STATUS_CONFIG: Record<
+  ScheduleEvent["status"],
+  { label: string; labelEn: string; color: string; bg: string }
+> = {
+  scheduled: { label: "Programada", labelEn: "Scheduled", color: "text-blue-700",  bg: "bg-blue-100" },
+  confirmed: { label: "Confirmada", labelEn: "Confirmed", color: "text-green-700", bg: "bg-green-100" },
+  completed: { label: "Completada", labelEn: "Completed", color: "text-gray-500",  bg: "bg-gray-100" },
+  cancelled: { label: "Cancelada",  labelEn: "Cancelled", color: "text-red-400",   bg: "bg-red-50" },
 };
 
 export const ROLE_CONFIG: Record<UserRole, { label: string; labelEn: string }> = {

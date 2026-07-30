@@ -7,7 +7,7 @@ import { AppLayout } from "@/components/layout/app-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
-import { toLocalISODate } from "@/lib/utils";
+import { toLocalISODate, SCHEDULE_EVENT_STATUS_CONFIG } from "@/lib/utils";
 
 export default function TecnicoAgendaPage({ params }: { params: { locale: string } }) {
   const { scheduleEvents, clients, workOrders } = useDataStore();
@@ -28,11 +28,6 @@ export default function TecnicoAgendaPage({ params }: { params: { locale: string
   const EventItem = ({ event }: { event: typeof myEvents[number] }) => {
     const client = clients.find((c) => c.id === event.clientId);
     const order = workOrders.find((o) => o.id === event.orderId);
-    const statusColor: Record<string, string> = {
-      scheduled: "bg-blue-100 text-blue-700",
-      confirmed: "bg-green-100 text-green-700",
-      completed: "bg-gray-100 text-gray-500",
-    };
 
     return (
       <div className="flex gap-4 p-4 rounded-xl border border-gray-100 bg-white hover:shadow-sm transition-shadow">
@@ -47,8 +42,8 @@ export default function TecnicoAgendaPage({ params }: { params: { locale: string
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <p className="font-semibold text-gray-900 text-sm">{event.title}</p>
-            <Badge className={statusColor[event.status] ?? "bg-gray-100 text-gray-500"}>
-              {event.status === "scheduled" ? "Programada" : event.status === "confirmed" ? "Confirmada" : "Completada"}
+            <Badge className={`${SCHEDULE_EVENT_STATUS_CONFIG[event.status].color} ${SCHEDULE_EVENT_STATUS_CONFIG[event.status].bg}`}>
+              {SCHEDULE_EVENT_STATUS_CONFIG[event.status].label}
             </Badge>
           </div>
           <div className="mt-2 space-y-1">
