@@ -13,6 +13,9 @@ const iconButtonVariants = cva(
         muted: "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
         // Sobre superficie oscura (ej. sidebar navy).
         inverse: "text-white/60 hover:text-white hover:bg-white/10",
+        // Solo cambia el fondo en hover; el texto no se oscurece (ej. flechas
+        // de navegación de mes, donde el color es puramente estructural).
+        quiet: "text-gray-500 hover:bg-gray-100",
       },
       size: {
         sm: "p-1 rounded",
