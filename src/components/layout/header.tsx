@@ -4,6 +4,7 @@ import { Bell, Globe, Menu } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/auth-store";
 import { Avatar } from "@/components/ui/avatar";
+import { IconButton } from "@/components/ui/icon-button";
 import { ROLE_CONFIG } from "@/lib/utils";
 
 interface HeaderProps {
@@ -27,13 +28,13 @@ export function Header({ title, locale, onMenuClick }: HeaderProps) {
   return (
     <header className="h-14 bg-white border-b border-gray-200 px-4 md:px-6 flex items-center justify-between gap-3 flex-shrink-0">
       <div className="flex items-center gap-2 min-w-0">
-        <button
+        <IconButton
           onClick={onMenuClick}
-          className="md:hidden -ml-1 p-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors flex-shrink-0"
           aria-label="Abrir menú"
+          className="md:hidden -ml-1 flex-shrink-0"
         >
           <Menu className="w-5 h-5" />
-        </button>
+        </IconButton>
         <h1 className="text-base font-semibold text-gray-800 truncate">{title}</h1>
       </div>
 
@@ -49,10 +50,17 @@ export function Header({ title, locale, onMenuClick }: HeaderProps) {
         </button>
 
         {/* Notifications stub */}
-        <button className="relative p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+        <IconButton
+          aria-label="Notificaciones — tienes novedades sin leer"
+          tone="muted"
+          className="relative"
+        >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+          <span
+            aria-hidden="true"
+            className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"
+          />
+        </IconButton>
 
         {/* User pill */}
         {currentUser && (
