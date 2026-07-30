@@ -22,6 +22,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useDataStore } from "@/store/data-store";
 import { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import { IconButton } from "@/components/ui/icon-button";
 
 interface NavItem {
   href: string;
@@ -94,23 +95,28 @@ export function Sidebar({ locale, mobileOpen, onClose }: SidebarProps) {
             <p className="text-xs text-white/50 truncate">Gestión HSEQ & SST</p>
           </div>
         )}
-        <button
+        <IconButton
           onClick={() => setCollapsed((c) => !c)}
-          className="hidden md:inline-flex ml-auto p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+          tone="inverse"
+          size="sm"
+          className="hidden md:inline-flex ml-auto"
         >
           {collapsed ? (
             <ChevronRight className="w-4 h-4" />
           ) : (
             <ChevronLeft className="w-4 h-4" />
           )}
-        </button>
-        <button
+        </IconButton>
+        <IconButton
           onClick={onClose}
-          className="md:hidden ml-auto p-1 rounded hover:bg-white/10 text-white/60 hover:text-white transition-colors"
           aria-label="Cerrar menú"
+          tone="inverse"
+          size="sm"
+          className="md:hidden ml-auto"
         >
           <X className="w-5 h-5" />
-        </button>
+        </IconButton>
       </div>
 
       {/* Nav */}

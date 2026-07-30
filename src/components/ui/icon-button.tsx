@@ -11,6 +11,8 @@ const iconButtonVariants = cva(
         default: "text-gray-500 hover:text-gray-800 hover:bg-gray-100",
         // Ícono secundario/decorativo: arranca más apagado (ej. notificaciones, cerrar).
         muted: "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
+        // Sobre superficie oscura (ej. sidebar navy).
+        inverse: "text-white/60 hover:text-white hover:bg-white/10",
       },
       size: {
         sm: "p-1 rounded",
