@@ -11,9 +11,12 @@ interface HeaderProps {
   title: string;
   locale: string;
   onMenuClick: () => void;
+  // TODO: no hay sistema de notificaciones real todavía. Cuando exista,
+  // este valor debe venir del store/API en vez de un default estático.
+  hasUnread?: boolean;
 }
 
-export function Header({ title, locale, onMenuClick }: HeaderProps) {
+export function Header({ title, locale, onMenuClick, hasUnread = false }: HeaderProps) {
   const { currentUser } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -51,15 +54,17 @@ export function Header({ title, locale, onMenuClick }: HeaderProps) {
 
         {/* Notifications stub */}
         <IconButton
-          aria-label="Notificaciones — tienes novedades sin leer"
+          aria-label={hasUnread ? "Notificaciones — tienes novedades sin leer" : "Notificaciones"}
           tone="muted"
           className="relative"
         >
           <Bell className="w-5 h-5" />
-          <span
-            aria-hidden="true"
-            className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"
-          />
+          {hasUnread && (
+            <span
+              aria-hidden="true"
+              className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"
+            />
+          )}
         </IconButton>
 
         {/* User pill */}
